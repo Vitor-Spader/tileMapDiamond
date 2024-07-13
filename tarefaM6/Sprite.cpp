@@ -93,12 +93,22 @@ void Sprite::inicializar(GLuint texID, int nAnimations, int nFrames, glm::vec3 p
 	getAABB();
 
 	colidiu = false;
+
+	lastTime = 0.0;
 }
 
-void Sprite::atualizar()
+void Sprite::atualizar(bool move)
 {
 	shader->Use();
-	//iFrame = (iFrame + 1) % nFrames; //incrementando ciclicamente o indice do Frame
+	float now = glfwGetTime();
+
+	float dt = now - lastTime;
+
+	if (dt >= 20 / 12 && move)//FPS
+	{
+		iFrame = (iFrame + 1) % nFrames; //incrementando ciclicamente o indice do Frame
+		lastTime = now;
+	}
 
 	//Calculando o quanto teremos que deslocar nas coordenadas de textura
 	float offsetTexFrameS = iFrame * offsetTex.s; 
@@ -111,15 +121,15 @@ void Sprite::atualizar()
     model = glm::scale(model, escala);
     shader->setMat4("model", glm::value_ptr(model));
 
-	shaderDebug->Use();
+	//shaderDebug->Use();
 	//shaderDebug->setVec2("offsetTex",offsetTexFrameS,offsetTexFrameT);
-	shaderDebug->setMat4("model", glm::value_ptr(model));
+	//shaderDebug->setMat4("model", glm::value_ptr(model));
 
 }
 
-void Sprite::desenhar()
+void Sprite::desenhar(bool move)
 {
-    atualizar();
+    atualizar(move);
 
 	shader->Use();
 	glBindTexture(GL_TEXTURE_2D, texID); //Conectando com a textura

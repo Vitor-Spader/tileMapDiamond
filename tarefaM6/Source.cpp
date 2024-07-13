@@ -70,8 +70,8 @@ const int MAX_LINHAS = 15;
 int tilemap[MAX_LINHAS][MAX_COLUNAS]; //este é o mapa de índices para os tiles do tileset
 glm::vec2 posIni; //pode virar parâmetro 
 
-//Variáveis para controle do tempo
-unsigned long startTime, endTime;
+//funcao para controle do fluxo do game
+bool startGame();
 
 //Função para fazer a leitura do tilemap do arquivo
 void loadMap(string fileName);
@@ -86,181 +86,19 @@ glm::vec2 playeriPos, coiniPos; //posição do indice do personagem no mapa
 // Função MAIN
 int main()
 {
-	// Inicialização da GLFW
-	glfwInit();
-
-	// Muita atenção aqui: alguns ambientes não aceitam essas configurações
-	// Você deve adaptar para a versão do OpenGL suportada por sua placa
-	// Sugestão: comente essas linhas de código para descobrir a versão e
-	// depois atualize (por exemplo: 4.5 com 4 e 5)
-	/*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);*/
-
-
-	// Criação da janela GLFW
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "TileMap Diamond", nullptr, nullptr);
-	glfwMakeContextCurrent(window);
-
-	// Fazendo o registro da função de callback para a janela GLFW
-	glfwSetKeyCallback(window, key_callback);
-	glfwSetWindowSizeCallback(window, resize_callback);
-
-	// GLAD: carrega todos os ponteiros de funções da OpenGL
-	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	int tecla = 10;//numero da tecla enter
+	while(tecla == 10)
 	{
-		std::cout << "Failed to initialize GLAD" << std::endl;
-
+		if(startGame()){
+			cout << "Parabens você venceu o jogo" << endl;
+		}
+		else{
+			cout << "Você perdeu o jogo" << endl;
+		}
+	
+		cout << "Deseja jogar novamente? tecle Enter, tecle outra tecla" << endl;
+		tecla = cin.get();
 	}
-
-	// Obtendo as informações de versão
-	const GLubyte* renderer = glGetString(GL_RENDERER); /* get renderer string */
-	const GLubyte* version = glGetString(GL_VERSION); /* version as a string */
-	cout << "Renderer: " << renderer << endl;
-	cout << "OpenGL version supported " << version << endl;
-
-	// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
-	viewportSize.x = WIDTH;
-	viewportSize.y = HEIGHT;
-	glViewport(0, 0, viewportSize.x, viewportSize.y);
-
-	//Habilitando a transparência
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-	//Habilitando o teste de profundidade
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_ALWAYS);
-
-	// Compilando e buildando o programa de shader
-	shader = new Shader("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.vs","C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.fs");
-	shaderDebug = new Shader("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.vs","C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangleDebug.fs");
-
-	//Leitura do tilemap
-	loadMap("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\maps\\map2.txt");
-	posIni.x = viewportSize.x/2.0;
-	posIni.y = tileSize.y/2.0;
-
-	//Criação de um objeto Tile
-	Tile tile;
-	tile.inicializar(tilesetTexID, 1, nTiles, glm::vec3(400.0,-200.0,0.0), glm::vec3(tileSize.x,tileSize.y,1.0),0.0,glm::vec3(1.0,1.0,1.0));
-	tile.setShader(shader);
-	tile.setShaderDebug(shaderDebug);
-
-	//Criação de um objeto Sprite para o personagem
-	//Carregando as texturas e armazenando seu ID
-	int imgWidth, imgHeight;
-	GLuint texID = loadTexture("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\tex\\knight.png", imgWidth, imgHeight);
-	
-	playeriPos.x = 0; //coluna
-	playeriPos.y = 0; //linha
-	glm::vec3 playerPos = computePosOnMap(playeriPos, posIni, tileSize);
-
-	Sprite player, coin, coin2;
-	player.inicializar(texID, 1, 1, playerPos, glm::vec3(imgWidth*0.7,imgHeight*0.7,1.0),0.0,glm::vec3(1.0,0.0,1.0));
-	player.setShader(shader);
-	player.setShaderDebug(shaderDebug);
-	
-	texID = loadTexture("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\tex\\Gold_1.png", imgWidth, imgHeight);
-
-	coiniPos.x = 3;
-	coiniPos.y = 3;
-	glm::vec3 coinPos = computePosOnMap(coiniPos, posIni, tileSize);
-
-	coin.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
-	coin.setShader(shader);
-	coin.setShaderDebug(shaderDebug);
-
-	coiniPos.x = 14;
-	coiniPos.y = 1;
-	coinPos = computePosOnMap(coiniPos, posIni, tileSize);
-
-	coin2.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
-	coin2.setShader(shader);
-	coin2.setShaderDebug(shaderDebug);
-	//Habilita o shader que será usado (glUseProgram)
-	(*shader).Use();
-	glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x,(double) viewportSize.y, 0.0, -1.0, 1.0);
-	//Enviando para o shader via variável do tipo uniform (glUniform....)
-	(*shader).setMat4("projection",glm::value_ptr(projection));
-
-	glActiveTexture(GL_TEXTURE0); //Especificando que o shader usará apenas 1 buffer de tex
-	(*shader).setInt("texBuffer", 0); //Enviando para o shader o ID e nome da var que será o sampler2D 
-
-	//Habilita o shader de debug
-	//shaderDebug->Use();
-	//shaderDebug->setMat4("projection",glm::value_ptr(projection));
-	
-	// Loop da aplicação - "game loop"
-	while (!glfwWindowShouldClose(window))
-	{
-		
-		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funções de callback correspondentes
-		glfwPollEvents();
-
-		if (resize) //se houve alteração no tamanho da janela
-		{
-			//Atualizamos a matriz de projeção ortográfica para ficar com relação 1:1 mundo e tela
-			(*shader).Use();
-			glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x*1.5,(double) viewportSize.y*1.5, 0.0, -1.0, 1.0);
-			//Enviando para o shader via variável do tipo uniform (glUniform....)
-			(*shader).setMat4("projection",glm::value_ptr(projection));
-
-			//shaderDebug->Use();
-			//shaderDebug->setMat4("projection",glm::value_ptr(projection));
-
-			posIni.x = viewportSize.x/2.0;
-			posIni.y = tileSize.y/2.0;
-			resize = false; //bem importante isso!!
-		}
-
-		// Atualizando input personagem
-		// Verifica flags para movimentação do personagem
-		if (dir != Sprite::directions::NONE)
-		{	
-			player.setPos(computePosOnMap(playeriPos, posIni, tileSize));
-			if (checkCollision(player, coin)){
-				coin.removeSprite();
-				isEnableCoin = false;
-			}
-			else if (checkCollision(player, coin2)){
-				coin2.removeSprite();
-				isEnableCoin2 = false;
-			}
-			if (tilemap[(int)round(playeriPos.y)][(int)round(playeriPos.x)] != 1)
-			{
-				playeriPos.x = 0;
-				playeriPos.y = 0;
-				player.setPos(computePosOnMap(playeriPos, posIni, tileSize));
-			}
-
-		}
-
-		// Limpa o buffer de cor
-		glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //cor de fundo
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		// tile.desenhar();
-		drawDiamondMap(tile);
-
-		player.desenhar();
-		if (!isEnableCoin && !isEnableCoin2){
-			cout<<"parabens voce venceu o game"<<endl;
-			break;
-		}
-		if (isEnableCoin)
-			coin.desenhar();
-
-		if (isEnableCoin2)
-			coin2.desenhar();
-		
-		// Troca os buffers da tela
-		glfwSwapBuffers(window);
-	}
-	
-	// Finaliza a execução da GLFW, limpando os recursos alocados por ela
-	glfwTerminate();
-	return 0;
 }
 
 // Função de callback de teclado - só pode ter uma instância (deve ser estática se
@@ -401,9 +239,7 @@ void loadMap(string fileName)
 			for (int j = 0; j < tilemapSize.x; j++) //percorrendo as colunas do mapa
 			{
 				arqEntrada >> tilemap[i][j];
-				// cout << tilemap[i][j] << " ";
 			}
-			// cout << endl;
 		}
 	
 	}
@@ -427,23 +263,6 @@ void drawDiamondMap(Tile &tile)
 	}
 }
 
-
-int startEndGame()
-{
-
-	if (startTime <= 0.0f){
-		startTime = GetTickCount();
-		return 0;
-	}
-	else{
-		endTime = GetTickCount();
-		cout<<"Time difference is "<<(endTime-startTime)<<" milliSeconds"<<endl;
-		int result = (int)(endTime-startTime)/1000;
-		startTime = -1.0; 
-		return result;
-	}
-}
-
 void resize_callback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
@@ -462,4 +281,197 @@ glm::vec3 computePosOnMap(glm::vec2 iPos, glm::vec2 posIni, glm::vec2 tileSize) 
 	pos.x = posIni.x + (iPos.x-iPos.y) * tileSize.x/2.0f;
 	pos.y = posIni.y + (iPos.x+iPos.y) * tileSize.y/2.0f;
 	return pos;
+}
+
+bool startGame()
+{
+
+	//inicializa variaveis globais para o valor padrão
+	isEnableCoin = isEnableCoin2 = true;
+
+		// Inicialização da GLFW
+	glfwInit();
+
+	// Muita atenção aqui: alguns ambientes não aceitam essas configurações
+	// Você deve adaptar para a versão do OpenGL suportada por sua placa
+	// Sugestão: comente essas linhas de código para descobrir a versão e
+	// depois atualize (por exemplo: 4.5 com 4 e 5)
+	/*glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);*/
+
+
+	// Criação da janela GLFW
+	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "TileMap Diamond", nullptr, nullptr);
+	glfwMakeContextCurrent(window);
+
+	// Fazendo o registro da função de callback para a janela GLFW
+	glfwSetKeyCallback(window, key_callback);
+	glfwSetWindowSizeCallback(window, resize_callback);
+
+	// GLAD: carrega todos os ponteiros de funções da OpenGL
+	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+	{
+		std::cout << "Failed to initialize GLAD" << std::endl;
+
+	}
+
+	// Obtendo as informações de versão
+	const GLubyte* renderer = glGetString(GL_RENDERER); /* get renderer string */
+	const GLubyte* version = glGetString(GL_VERSION); /* version as a string */
+	cout << "Renderer: " << renderer << endl;
+	cout << "OpenGL version supported " << version << endl;
+
+	// Definindo as dimensões da viewport com as mesmas dimensões da janela da aplicação
+	viewportSize.x = WIDTH;
+	viewportSize.y = HEIGHT;
+	glViewport(0, 0, viewportSize.x, viewportSize.y);
+
+	//Habilitando a transparência
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	//Habilitando o teste de profundidade
+	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_ALWAYS);
+
+	// Compilando e buildando o programa de shader
+	shader = new Shader("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\HelloTriangle.vs","C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\HelloTriangle.fs");
+	shaderDebug = new Shader("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\HelloTriangle.vs","C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\HelloTriangleDebug.fs");
+
+	//Leitura do tilemap
+	loadMap("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\maps\\map2.txt");
+	posIni.x = viewportSize.x/2.0;
+	posIni.y = tileSize.y/2.0;
+
+	//Criação de um objeto Tile
+	Tile tile;
+	tile.inicializar(tilesetTexID, 1, nTiles, glm::vec3(400.0,-200.0,0.0), glm::vec3(tileSize.x,tileSize.y,1.0),0.0,glm::vec3(1.0,1.0,1.0));
+	tile.setShader(shader);
+	tile.setShaderDebug(shaderDebug);
+
+	//Criação de um objeto Sprite para o personagem
+	//Carregando as texturas e armazenando seu ID
+	int imgWidth, imgHeight;
+	GLuint texID = loadTexture("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\tex\\char.png", imgWidth, imgHeight);
+	
+	playeriPos.x = 0; //coluna
+	playeriPos.y = 0; //linha
+	glm::vec3 playerPos = computePosOnMap(playeriPos, posIni, tileSize);
+
+	Sprite player, coin, coin2;
+	player.inicializar(texID, 4, 6, playerPos, glm::vec3(imgWidth*3,imgHeight*3,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	player.setShader(shader);
+	player.setShaderDebug(shaderDebug);
+	
+	texID = loadTexture("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\tex\\Gold_1.png", imgWidth, imgHeight);
+
+	coiniPos.x = 3;
+	coiniPos.y = 3;
+	glm::vec3 coinPos = computePosOnMap(coiniPos, posIni, tileSize);
+
+	coin.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	coin.setShader(shader);
+	coin.setShaderDebug(shaderDebug);
+
+	coiniPos.x = 13;
+	coiniPos.y = 13;
+	coinPos = computePosOnMap(coiniPos, posIni, tileSize);
+
+	coin2.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	coin2.setShader(shader);
+	coin2.setShaderDebug(shaderDebug);
+	//Habilita o shader que será usado (glUseProgram)
+	(*shader).Use();
+	glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x,(double) viewportSize.y, 0.0, -1.0, 1.0);
+	//Enviando para o shader via variável do tipo uniform (glUniform....)
+	(*shader).setMat4("projection",glm::value_ptr(projection));
+
+	glActiveTexture(GL_TEXTURE0); //Especificando que o shader usará apenas 1 buffer de tex
+	(*shader).setInt("texBuffer", 0); //Enviando para o shader o ID e nome da var que será o sampler2D 
+
+	//Habilita o shader de debug
+	//shaderDebug->Use();
+	//shaderDebug->setMat4("projection",glm::value_ptr(projection));
+
+	int lastx = -1, lasty = -1;
+	// Loop da aplicação - "game loop"
+	while (!glfwWindowShouldClose(window))
+	{
+		
+		// Checa se houveram eventos de input (key pressed, mouse moved etc.) e chama as funções de callback correspondentes
+		glfwPollEvents();
+
+		if (resize) //se houve alteração no tamanho da janela
+		{
+			//Atualizamos a matriz de projeção ortográfica para ficar com relação 1:1 mundo e tela
+			(*shader).Use();
+			glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x*1.5,(double) viewportSize.y*1.5, 0.0, -1.0, 1.0);
+			//Enviando para o shader via variável do tipo uniform (glUniform....)
+			(*shader).setMat4("projection",glm::value_ptr(projection));
+
+			//shaderDebug->Use();
+			//shaderDebug->setMat4("projection",glm::value_ptr(projection));
+
+			posIni.x = viewportSize.x/2.0;
+			posIni.y = tileSize.y/2.0;
+			resize = false; //bem importante isso!!
+		}
+
+		// Atualizando input personagem
+		// Verifica flags para movimentação do personagem
+		if (dir != Sprite::directions::NONE)
+		{	
+			player.setPos(computePosOnMap(playeriPos, posIni, tileSize));
+			player.desenhar(true);
+			if (checkCollision(player, coin)){
+				coin.removeSprite();
+				isEnableCoin = false;
+			}
+			else if (checkCollision(player, coin2)){
+				coin2.removeSprite();
+				isEnableCoin2 = false;
+			}
+			if (tilemap[(int)round(playeriPos.y)][(int)round(playeriPos.x)] == 3)
+			{
+				glfwSetWindowShouldClose(window, GL_TRUE);
+				glfwTerminate();
+				return false;
+			}
+			else{
+				if (lastx >= 0 && lasty >= 0)
+					tilemap[lasty][lastx] = 3;
+				lasty = (int)round(playeriPos.y);
+				lastx = (int)round(playeriPos.x);
+				tilemap[(int)round(playeriPos.y)][(int)round(playeriPos.x)] = 2;
+			}
+				
+
+		}
+
+		// Limpa o buffer de cor
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //cor de fundo
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		// tile.desenhar();
+		drawDiamondMap(tile);
+		player.desenhar(false);
+
+		if (!isEnableCoin && !isEnableCoin2){
+			cout<<"parabens voce venceu o game"<<endl;
+			break;
+		}
+		if (isEnableCoin)
+			coin.desenhar(false);
+
+		if (isEnableCoin2)
+			coin2.desenhar(false);
+		
+		// Troca os buffers da tela
+		glfwSwapBuffers(window);
+	}
+	
+	// Finaliza a execução da GLFW, limpando os recursos alocados por ela
+	glfwTerminate();
+	return true;
 }
