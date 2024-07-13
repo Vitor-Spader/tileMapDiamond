@@ -47,13 +47,13 @@ int startEndGame();
 glm::vec3 computePosOnMap(glm::vec2 iPos, glm::vec2 posIni, glm::vec2 tileSize);
 
 // Dimensões da janela (pode ser alterado em tempo de execução)
-const GLuint WIDTH = 1280, HEIGHT = 720;
+const GLuint WIDTH = 1920, HEIGHT = 1080;
 glm::vec2 viewportSize;
 bool resize = false;
 
 //Variáveis globais
 int dir = Sprite::directions::NONE; //controle da direção do personagem
-bool isEnableCoin = true;
+bool isEnableCoin = true, isEnableCoin2 = true;
 int lavaTile = 3;//Lava
 
 //Variáveis para armazenar as infos do tileset
@@ -81,6 +81,7 @@ void drawDiamondMap(Tile &tile);
 Shader *shaderDebug;
 Shader *shader;
 
+void generatePositionCoin(float &posx, float &posy);
 glm::vec2 playeriPos, coiniPos; //posição do indice do personagem no mapa
 // Função MAIN
 int main()
@@ -142,7 +143,7 @@ int main()
 
 	//Criação de um objeto Tile
 	Tile tile;
-	tile.inicializar(tilesetTexID, 1, nTiles, glm::vec3(400.0,300.0,0.0), glm::vec3(tileSize.x,tileSize.y,1.0),0.0,glm::vec3(1.0,1.0,1.0));
+	tile.inicializar(tilesetTexID, 1, nTiles, glm::vec3(400.0,-200.0,0.0), glm::vec3(tileSize.x,tileSize.y,1.0),0.0,glm::vec3(1.0,1.0,1.0));
 	tile.setShader(shader);
 	tile.setShaderDebug(shaderDebug);
 
@@ -154,18 +155,29 @@ int main()
 	playeriPos.x = 0; //coluna
 	playeriPos.y = 0; //linha
 	glm::vec3 playerPos = computePosOnMap(playeriPos, posIni, tileSize);
-	coiniPos.x = 3; //coluna
-	coiniPos.y = 3; //linha
-	glm::vec3 coinPos = computePosOnMap(coiniPos, posIni, tileSize);
-	
-	Sprite player, coin;
+
+	Sprite player, coin, coin2;
 	player.inicializar(texID, 1, 1, playerPos, glm::vec3(imgWidth*0.7,imgHeight*0.7,1.0),0.0,glm::vec3(1.0,0.0,1.0));
 	player.setShader(shader);
 	player.setShaderDebug(shaderDebug);
 	
-	coin.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth,imgHeight,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	texID = loadTexture("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\tex\\Gold_1.png", imgWidth, imgHeight);
+
+	coiniPos.x = 3;
+	coiniPos.y = 3;
+	glm::vec3 coinPos = computePosOnMap(coiniPos, posIni, tileSize);
+
+	coin.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
 	coin.setShader(shader);
 	coin.setShaderDebug(shaderDebug);
+
+	coiniPos.x = 14;
+	coiniPos.y = 1;
+	coinPos = computePosOnMap(coiniPos, posIni, tileSize);
+
+	coin2.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth*0.09,imgHeight*0.09,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	coin2.setShader(shader);
+	coin2.setShaderDebug(shaderDebug);
 	//Habilita o shader que será usado (glUseProgram)
 	(*shader).Use();
 	glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x,(double) viewportSize.y, 0.0, -1.0, 1.0);
@@ -211,7 +223,11 @@ int main()
 				coin.removeSprite();
 				isEnableCoin = false;
 			}
-			if (tilemap[(int)round(playeriPos.x)][(int)round(playeriPos.y)] != 1)
+			else if (checkCollision(player, coin2)){
+				coin2.removeSprite();
+				isEnableCoin2 = false;
+			}
+			if (tilemap[(int)round(playeriPos.y)][(int)round(playeriPos.x)] != 1)
 			{
 				playeriPos.x = 0;
 				playeriPos.y = 0;
@@ -228,8 +244,15 @@ int main()
 		drawDiamondMap(tile);
 
 		player.desenhar();
+		if (!isEnableCoin && !isEnableCoin2){
+			cout<<"parabens voce venceu o game"<<endl;
+			break;
+		}
 		if (isEnableCoin)
 			coin.desenhar();
+
+		if (isEnableCoin2)
+			coin2.desenhar();
 		
 		// Troca os buffers da tela
 		glfwSwapBuffers(window);
@@ -378,7 +401,7 @@ void loadMap(string fileName)
 			for (int j = 0; j < tilemapSize.x; j++) //percorrendo as colunas do mapa
 			{
 				arqEntrada >> tilemap[i][j];
-				//cout << tilemap[i][j] << " ";
+				// cout << tilemap[i][j] << " ";
 			}
 			// cout << endl;
 		}
@@ -440,4 +463,3 @@ glm::vec3 computePosOnMap(glm::vec2 iPos, glm::vec2 posIni, glm::vec2 tileSize) 
 	pos.y = posIni.y + (iPos.x+iPos.y) * tileSize.y/2.0f;
 	return pos;
 }
-
