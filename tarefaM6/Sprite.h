@@ -30,7 +30,10 @@ class Sprite
     inline void setShaderDebug(Shader *shader) { this->shaderDebug = shader; }
     inline void setAngulo(float angulo) { this->angulo = angulo; }
     void setPos(glm::vec2 pos) { this->pos.x = pos.x; this->pos.y = pos.y; }
-    
+    inline void removeSprite(){glDeleteVertexArrays(1, &VAO);}
+    inline int getPosx(){return this->pos.x;};
+    inline int getPosy(){return this->pos.y;};
+
     inline glm::vec3 getPMin() { return this->pmin;}
     inline glm::vec3 getPMax() { return this->pmax;}
     

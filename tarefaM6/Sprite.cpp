@@ -85,7 +85,7 @@ void Sprite::inicializar(GLuint texID, int nAnimations, int nFrames, glm::vec3 p
 	// Desvincula o VAO (é uma boa prática desvincular qualquer buffer ou array para evitar bugs medonhos)
 	glBindVertexArray(0);
 
-	vel = 0.3;
+	vel = 0.6;
 
 	iAnimation = 0;
 	iFrame = 0;

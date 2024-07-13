@@ -11,7 +11,9 @@ class Tile : public Sprite
     void atualizar();
     void desenhar();
     void desenharNaPos(int i, int j, int iTile, glm::vec2 posIni = glm::vec2(0), int mode=DIAMOND);
+    bool collided(int x, int y);
 
+    inline glm::vec3 getPos(){return this->pos;};
     protected:
 
     int nRows, nCols; //linhas e colunas do tileset

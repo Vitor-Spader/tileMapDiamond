@@ -53,6 +53,8 @@ bool resize = false;
 
 //Variáveis globais
 int dir = Sprite::directions::NONE; //controle da direção do personagem
+bool isEnableCoin = true;
+int lavaTile = 3;//Lava
 
 //Variáveis para armazenar as infos do tileset
 GLuint tilesetTexID;
@@ -77,6 +79,9 @@ void drawDiamondMap(Tile &tile);
 
 //Deixando shader de debug global para facilitar acesso nas funções 
 Shader *shaderDebug;
+Shader *shader;
+
+glm::vec2 playeriPos, coiniPos; //posição do indice do personagem no mapa
 // Função MAIN
 int main()
 {
@@ -127,18 +132,18 @@ int main()
 	glDepthFunc(GL_ALWAYS);
 
 	// Compilando e buildando o programa de shader
-	Shader shader("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.vs","C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.fs");
+	shader = new Shader("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.vs","C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.fs");
 	shaderDebug = new Shader("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangle.vs","C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\HelloTriangleDebug.fs");
-	
+
 	//Leitura do tilemap
-	loadMap("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\maps\\map3.txt");
+	loadMap("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\maps\\map2.txt");
 	posIni.x = viewportSize.x/2.0;
 	posIni.y = tileSize.y/2.0;
 
 	//Criação de um objeto Tile
 	Tile tile;
 	tile.inicializar(tilesetTexID, 1, nTiles, glm::vec3(400.0,300.0,0.0), glm::vec3(tileSize.x,tileSize.y,1.0),0.0,glm::vec3(1.0,1.0,1.0));
-	tile.setShader(&shader);
+	tile.setShader(shader);
 	tile.setShaderDebug(shaderDebug);
 
 	//Criação de um objeto Sprite para o personagem
@@ -146,30 +151,29 @@ int main()
 	int imgWidth, imgHeight;
 	GLuint texID = loadTexture("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\tex\\knight.png", imgWidth, imgHeight);
 	
-	glm::vec2 iPos; //posição do indice do personagem no mapa
-	iPos.x = 0; //coluna
-	iPos.y = 0; //linha
-	glm::vec3 playerPos = computePosOnMap(iPos, posIni, tileSize);
-	iPos.x = 3; //coluna
-	iPos.y = 3; //linha
-	glm::vec3 coinPos = computePosOnMap(iPos, posIni, tileSize);
+	playeriPos.x = 0; //coluna
+	playeriPos.y = 0; //linha
+	glm::vec3 playerPos = computePosOnMap(playeriPos, posIni, tileSize);
+	coiniPos.x = 3; //coluna
+	coiniPos.y = 3; //linha
+	glm::vec3 coinPos = computePosOnMap(coiniPos, posIni, tileSize);
 	
 	Sprite player, coin;
-	player.inicializar(texID, 1, 1, playerPos, glm::vec3(imgWidth,imgHeight,1.0),0.0,glm::vec3(1.0,0.0,1.0));
-	player.setShader(&shader);
+	player.inicializar(texID, 1, 1, playerPos, glm::vec3(imgWidth*0.7,imgHeight*0.7,1.0),0.0,glm::vec3(1.0,0.0,1.0));
+	player.setShader(shader);
 	player.setShaderDebug(shaderDebug);
 	
 	coin.inicializar(texID, 1, 1, coinPos, glm::vec3(imgWidth,imgHeight,1.0),0.0,glm::vec3(1.0,0.0,1.0));
-	coin.setShader(&shader);
+	coin.setShader(shader);
 	coin.setShaderDebug(shaderDebug);
 	//Habilita o shader que será usado (glUseProgram)
-	shader.Use();
+	(*shader).Use();
 	glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x,(double) viewportSize.y, 0.0, -1.0, 1.0);
 	//Enviando para o shader via variável do tipo uniform (glUniform....)
-	shader.setMat4("projection",glm::value_ptr(projection));
+	(*shader).setMat4("projection",glm::value_ptr(projection));
 
 	glActiveTexture(GL_TEXTURE0); //Especificando que o shader usará apenas 1 buffer de tex
-	shader.setInt("texBuffer", 0); //Enviando para o shader o ID e nome da var que será o sampler2D 
+	(*shader).setInt("texBuffer", 0); //Enviando para o shader o ID e nome da var que será o sampler2D 
 
 	//Habilita o shader de debug
 	//shaderDebug->Use();
@@ -185,10 +189,10 @@ int main()
 		if (resize) //se houve alteração no tamanho da janela
 		{
 			//Atualizamos a matriz de projeção ortográfica para ficar com relação 1:1 mundo e tela
-			shader.Use();
-			glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x,(double) viewportSize.y, 0.0, -1.0, 1.0);
+			(*shader).Use();
+			glm::mat4 projection = glm::ortho(0.0, (double) viewportSize.x*1.5,(double) viewportSize.y*1.5, 0.0, -1.0, 1.0);
 			//Enviando para o shader via variável do tipo uniform (glUniform....)
-			shader.setMat4("projection",glm::value_ptr(projection));
+			(*shader).setMat4("projection",glm::value_ptr(projection));
 
 			//shaderDebug->Use();
 			//shaderDebug->setMat4("projection",glm::value_ptr(projection));
@@ -201,14 +205,21 @@ int main()
 		// Atualizando input personagem
 		// Verifica flags para movimentação do personagem
 		if (dir != Sprite::directions::NONE)
-		{
-			player.move(dir);
+		{	
+			player.setPos(computePosOnMap(playeriPos, posIni, tileSize));
 			if (checkCollision(player, coin)){
-				coin.atualizar();
+				coin.removeSprite();
+				isEnableCoin = false;
 			}
+			if (tilemap[(int)round(playeriPos.x)][(int)round(playeriPos.y)] != 1)
+			{
+				playeriPos.x = 0;
+				playeriPos.y = 0;
+				player.setPos(computePosOnMap(playeriPos, posIni, tileSize));
+			}
+
 		}
 
-	
 		// Limpa o buffer de cor
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f); //cor de fundo
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -217,7 +228,8 @@ int main()
 		drawDiamondMap(tile);
 
 		player.desenhar();
-		coin.desenhar();
+		if (isEnableCoin)
+			coin.desenhar();
 		
 		// Troca os buffers da tela
 		glfwSwapBuffers(window);
@@ -240,27 +252,39 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	{
 	case GLFW_KEY_KP_4:
 		dir = Sprite::directions::WEST;
+		playeriPos.y += 0.25;
 		break;
 	case GLFW_KEY_KP_6:
 		dir = Sprite::directions::EAST;
+		playeriPos.y -= 0.25;
 		break;
 	case GLFW_KEY_KP_8:
 		dir = Sprite::directions::NORTH;
+		playeriPos.x -= 0.25;
 		break;
 	case GLFW_KEY_KP_2:
 		dir = Sprite::directions::SOUTH;
+		playeriPos.x += 0.25;
 		break;
 	case GLFW_KEY_KP_9:
 		dir = Sprite::directions::NORTHEAST;
+		playeriPos.y -= 0.25;
+		playeriPos.x -= 0.25;
 		break;
 	case GLFW_KEY_KP_3:
 		dir = Sprite::directions::SOUTHEAST;
+		playeriPos.y -= 0.25;
+		playeriPos.x += 0.25;
 		break;
 	case GLFW_KEY_KP_7:
 		dir = Sprite::directions::NORTHWEST;
+		playeriPos.y += 0.25;
+		playeriPos.x -= 0.25;
 		break;
 	case GLFW_KEY_KP_1:
 		dir = Sprite::directions::SOUTHWEST;
+		playeriPos.y += 0.25;
+		playeriPos.x += 0.25;
 		break;
 	default:
 		break;
@@ -343,7 +367,7 @@ void loadMap(string fileName)
 		int width, height;
 		//Leitura das informações sobre o tileset
 		arqEntrada >> textureName >> nTiles >> tileSize.y >> tileSize.x;
-		tilesetTexID = loadTexture("C:\\Users\\vitor\\source\\repos\\PGCCHIB\\HelloTriangle - Sprites - Tiles - HIBRIDO\\tex\\" + textureName, width, height);
+		tilesetTexID = loadTexture("C:\\Users\\vitor\\Desktop\\Programacao\\TarefaM6\\tarefaM6\\tex\\" + textureName, width, height);
 		//Só pra debug, printar os dados
 		//cout << textureName << " " << nTiles << " " << tileSize.y << " " << tileSize.x << endl;
 		//Leitura das informações sobre o mapa (tilemap)
@@ -356,7 +380,7 @@ void loadMap(string fileName)
 				arqEntrada >> tilemap[i][j];
 				//cout << tilemap[i][j] << " ";
 			}
-			cout << endl;
+			// cout << endl;
 		}
 	
 	}
@@ -368,6 +392,8 @@ void loadMap(string fileName)
 
 void drawDiamondMap(Tile &tile)
 {
+	int index_sprite = 0;//inicia no zero sempre
+
 	for (int i=0; i < tilemapSize.y; i++)
 	{
 		for (int j=0; j < tilemapSize.x; j++)
@@ -414,6 +440,4 @@ glm::vec3 computePosOnMap(glm::vec2 iPos, glm::vec2 posIni, glm::vec2 tileSize) 
 	pos.y = posIni.y + (iPos.x+iPos.y) * tileSize.y/2.0f;
 	return pos;
 }
-
-
 
